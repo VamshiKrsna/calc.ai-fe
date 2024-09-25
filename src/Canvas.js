@@ -7,11 +7,10 @@ const Canvas = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEraser, setIsEraser] = useState(false);
 
-  // Start drawing function
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = isEraser ? '#FFFFFF' : color; // Use white for eraser
+    ctx.strokeStyle = isEraser ? '#FFFFFF' : color; // using white color for eraser
     ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -19,7 +18,7 @@ const Canvas = () => {
     setIsDrawing(true);
   };
 
-  // Drawing on canvas
+  // drawing function
   const draw = (e) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
@@ -28,12 +27,11 @@ const Canvas = () => {
     ctx.stroke();
   };
 
-  // Stop drawing
   const stopDrawing = () => {
     setIsDrawing(false);
   };
 
-  // Toggle between eraser and marker
+  // toggle between eraser and marker
   const toggleEraser = () => {
     setIsEraser(!isEraser);
   };
@@ -157,8 +155,9 @@ const styles = {
     width: '40px',
     height: '40px',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '30%',
     cursor: 'pointer',
+
   },
   range: {
     width: '100px',
