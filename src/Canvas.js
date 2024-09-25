@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import axios from "axios";
 
 const Canvas = () => {
   const canvasRef = useRef(null);
@@ -6,11 +7,13 @@ const Canvas = () => {
   const [lineWidth, setLineWidth] = useState(5);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEraser, setIsEraser] = useState(false);
+  const [resultText, setResultText] = useState(""); // state to store result text
+  const [loading, setLoading] = useState(false); // state to manage loading state
 
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = isEraser ? '#FFFFFF' : color; // using white color for eraser
+    ctx.strokeStyle = isEraser ? '#FFFFFF' : color; // using white color as eraser
     ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -18,7 +21,6 @@ const Canvas = () => {
     setIsDrawing(true);
   };
 
-  // drawing function
   const draw = (e) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
@@ -31,23 +33,43 @@ const Canvas = () => {
     setIsDrawing(false);
   };
 
-  // toggle between eraser and marker
   const toggleEraser = () => {
     setIsEraser(!isEraser);
   };
 
-  // Handle reset (reload the page)
   const handleReset = () => {
-    window.location.reload(); // Refresh the page
+    window.location.reload(); // reset the canvas
   };
 
-  // Handle submission to backend (empty for now)
-  const handleSubmit = () => {
+  // handling submission to backend
+  const handleSubmit = async () => {
     const canvas = canvasRef.current;
-    const dataURL = canvas.toDataURL('image/png');
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append("file", blob, "canvas.png");
 
-    // Placeholder for sending canvas data to the backend
-    console.log('Sending canvas data to the backend:', dataURL);
+      setLoading(true); 
+
+      try {
+        const response = await axios.post(
+          "http://127.0.0.1:8000/analyze-image",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        const result = response.data.results[0]?.result;
+        setResultText(result || "No result found.");
+      } catch (error) {
+        console.error("Error sending canvas data:", error);
+        setResultText("Error analyzing the image.");
+      } finally {
+        setLoading(false); 
+      }
+    });
   };
 
   return (
@@ -100,8 +122,8 @@ const Canvas = () => {
         </button>
 
         {/* Submit Button */}
-        <button style={styles.submitButton} onClick={handleSubmit}>
-          Check
+        <button style={styles.submitButton} onClick={handleSubmit} disabled={loading}>
+          {loading ? "Checking..." : "Check"}
         </button>
       </div>
 
@@ -116,11 +138,19 @@ const Canvas = () => {
         onMouseUp={stopDrawing}
         onMouseLeave={stopDrawing}
       ></canvas>
+
+      {/* Display result */}
+      {resultText && (
+        <div style={styles.resultContainer}>
+          <h3 style={styles.resultTitle}>Result:</h3>
+          <p style={styles.resultText}>{resultText}</p>
+        </div>
+      )}
     </div>
   );
 };
 
-// Styles for the component
+// Styling
 const styles = {
   container: {
     display: 'flex',
@@ -157,7 +187,6 @@ const styles = {
     border: 'none',
     borderRadius: '30%',
     cursor: 'pointer',
-
   },
   range: {
     width: '100px',
@@ -193,6 +222,23 @@ const styles = {
     border: '2px solid #333',
     borderRadius: '8px',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+  },
+  resultContainer: {
+    marginTop: '20px',
+    textAlign: 'center',
+    backgroundColor: '#f9f9f9',
+    padding: '10px',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+  },
+  resultTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  resultText: {
+    fontSize: '16px',
+    color: '#555',
   },
 };
 
