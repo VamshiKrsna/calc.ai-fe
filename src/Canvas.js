@@ -1,19 +1,27 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import axios from "axios";
 
 const Canvas = () => {
   const canvasRef = useRef(null);
-  const [color, setColor] = useState('#000000');
+  const [color, setColor] = useState('#FFFFFF'); // Set default ink color to white
   const [lineWidth, setLineWidth] = useState(5);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEraser, setIsEraser] = useState(false);
   const [resultText, setResultText] = useState(""); // state to store result text
   const [loading, setLoading] = useState(false); // state to manage loading state
 
+  // Fill canvas with black background on mount
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000000'; // Set background color to black
+    ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the entire canvas
+  }, []);
+
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = isEraser ? '#FFFFFF' : color; // using white color as eraser
+    ctx.strokeStyle = isEraser ? '#000000' : color; // Use black for eraser
     ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -38,38 +46,60 @@ const Canvas = () => {
   };
 
   const handleReset = () => {
-    window.location.reload(); // reset the canvas
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    // Resetting the background to black
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Optionally clear any drawings
+    setIsDrawing(false);
   };
 
-  // handling submission to backend
+  // Handling submission to backend
   const handleSubmit = async () => {
     const canvas = canvasRef.current;
-    canvas.toBlob(async (blob) => {
-      const formData = new FormData();
-      formData.append("file", blob, "canvas.png");
 
-      setLoading(true); 
+    // Create a new image with a black background
+    const dataURL = canvas.toDataURL("image/png");
 
-      try {
-        const response = await axios.post(
-          "http://127.0.0.1:8000/analyze-image",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+    // Convert data URL to Blob for submission
+    const responseBlob = await fetch(dataURL);
+    const blob = await responseBlob.blob();
 
-        const result = response.data.results[0]?.result;
-        setResultText(result || "No result found.");
-      } catch (error) {
-        console.error("Error sending canvas data:", error);
-        setResultText("Error analyzing the image.");
-      } finally {
-        setLoading(false); 
-      }
-    });
+    const formData = new FormData();
+    formData.append("file", blob, "canvas.png");
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/calculate/analyze-image",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      // Save a screenshot of the submission
+      // const link = document.createElement('a');
+      // link.href = dataURL; // Use the data URL of the canvas
+      // link.download = 'canvas_screenshot.png'; // Set the file name
+      // document.body.appendChild(link);
+      // link.click(); // Trigger the download
+      // document.body.removeChild(link); 
+      const results = response.data;
+      const formattedResult = results.map(item=>`${item.expr}: ${item.result}`).join(' , ');
+      setResultText(formattedResult || "No Result Found");
+    } catch (error) {
+      console.error("Error sending canvas data:", error);
+      setResultText("Error analyzing the image.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -189,57 +219,57 @@ const styles = {
     cursor: 'pointer',
   },
   range: {
-    width: '100px',
-    cursor: 'pointer',
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    padding: '10px 15px',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background-color 0.3s ease',
-  },
-  submitButton: {
-    backgroundColor: '#007BFF',
-    color: 'white',
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '8px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s ease',
-  },
-  icon: {
-    width: '20px',
-    height: '20px',
-  },
-  canvas: {
-    border: '2px solid #333',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-  },
-  resultContainer: {
-    marginTop: '20px',
-    textAlign: 'center',
-    backgroundColor: '#f9f9f9',
-    padding: '10px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-  },
-  resultTitle: {
-    fontSize: '18px',
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  resultText: {
-    fontSize: '16px',
-    color: '#555',
-  },
+     width:'100px', 
+     cursor:'pointer', 
+   },
+   button:{
+     backgroundColor:'#4CAF50', 
+     color:'white', 
+     padding:'10px15px', 
+     border:'none', 
+     borderRadius:'8px', 
+     cursor:'pointer', 
+     display:'flex', 
+     alignItems:'center', 
+     justifyContent:'center', 
+     transition:'background-color0.3sease', 
+   },
+   submitButton:{
+     backgroundColor:'#007BFF', 
+     color:'white', 
+     padding:'10px20px', 
+     border:'none', 
+     borderRadius:'8px', 
+     fontWeight:'bold', 
+     cursor:'pointer', 
+     transition:'background-color0.3sease', 
+   },
+   icon:{
+     width:'20px', 
+     height:'20px', 
+   },
+   canvas:{
+     border:'2px solid #333', 
+     borderRadius:'8px', 
+     boxShadow:'04px12px rgba(0,0,0,0.1)', 
+   },
+   resultContainer:{
+     marginTop:'20px', 
+     textAlign:'center', 
+     backgroundColor:'#f9f9f9', 
+     padding:'10px', 
+     borderRadius:'8px', 
+     boxShadow:'04px12px rgba(0,0,0,0.1)', 
+   },
+   resultTitle:{
+     fontSize:'18px', 
+     fontWeight:'bold', 
+     color:'#333', 
+   },
+   resultText:{
+     fontSize:'16px', 
+     color:'#555', 
+   },  
 };
 
 export default Canvas;
