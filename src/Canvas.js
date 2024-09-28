@@ -182,6 +182,7 @@ const Canvas = () => {
 
 // Styling
 const styles = {
+
   container: {
     display: 'flex',
     flexDirection: 'column',
