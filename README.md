@@ -2,7 +2,7 @@ react frontend of my ai calculator app (similar to ios calculator)
 
 
 To run this project in your local machine : 
-1. Clone the Frontend Repo : https://github.com/VamshiKrsna/calc.ai-fe/
+1. Clone the Frontend Repo :
    ```git
    git clone https://github.com/VamshiKrsna/calc.ai-fe/
    ```
@@ -18,4 +18,5 @@ To run this project in your local machine :
    ```python
    uvicorn main:app
    ```
-   
+5. Configure GEMINI_API_KEY in a .env file to start using the app.
+6. The project should be up and running, with React Frontend and FastAPI Backend connected.
